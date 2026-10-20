@@ -11,6 +11,8 @@ create table if not exists public.items (
   room        text,
   size        text,
   color       text,
+  price       numeric,
+  price_tier  smallint check (price_tier between 1 and 4),
   received    boolean not null default false,
   received_at timestamptz,
   created_at  timestamptz not null default now(),
@@ -34,3 +36,7 @@ on conflict (id) do nothing;
 drop policy if exists "signed in users upload photos" on storage.objects;
 create policy "signed in users upload photos" on storage.objects
   for insert to authenticated with check (bucket_id = 'photos');
+
+-- Cambios posteriores (seguros de correr más de una vez).
+alter table public.items add column if not exists price numeric;
+alter table public.items add column if not exists price_tier smallint check (price_tier between 1 and 4);

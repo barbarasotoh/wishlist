@@ -467,18 +467,50 @@ main[class*="theme-"] .card .photo.has-img,
   word-break: break-word;
 }
 
+.card .price {
+  margin: -2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tier { letter-spacing: 0.08em; font-weight: 600; }
+.tier .off { color: var(--faint); }
+.card .price .tier { font-size: 14px; }
+.legend .tier { font-size: 15px; }
+
+.tiers { display: flex; gap: 8px; }
+
+.tiers button {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--faint);
+  border-radius: 10px;
+  padding: 9px 0;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.tiers button[aria-pressed="true"] {
+  background: var(--list);
+  border-color: var(--list);
+  color: #fff;
+}
+
 .card .meta {
   margin-top: auto;
   padding-top: 10px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   font-size: 12px;
   color: var(--muted);
 }
 
 .card .meta span { min-width: 0; }
+.card .meta a { max-width: 100%; }
 .card .meta a {
   color: var(--text);
   text-underline-offset: 3px;

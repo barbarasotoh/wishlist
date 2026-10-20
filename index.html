@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div id="app"></div>
@@ -41,6 +41,22 @@
       <label class="field">
         <span>Link</span>
         <input name="link" type="text" inputmode="url" placeholder="https://…" autocomplete="off">
+      </label>
+
+      <div class="field" id="tier-field">
+        <span>Precio</span>
+        <div class="tiers" id="form-tiers">
+          <button type="button" data-tier="1">$</button>
+          <button type="button" data-tier="2">$$</button>
+          <button type="button" data-tier="3">$$$</button>
+          <button type="button" data-tier="4">$$$$</button>
+        </div>
+        <small id="form-tier-label" class="muted"></small>
+      </div>
+
+      <label class="field" id="price-field">
+        <span>Precio (MXN)</span>
+        <input name="price" type="text" inputmode="decimal" placeholder="$0" autocomplete="off">
       </label>
 
       <div class="field">
@@ -82,8 +98,8 @@
     </form>
   </dialog>
 
-  <script src="config.js?v=2"></script>
+  <script src="config.js?v=4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

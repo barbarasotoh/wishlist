@@ -4,7 +4,7 @@
   // ---------- Config ----------
 
   const cfg = window.WISHLIST_CONFIG || {};
-  const DEMO = !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY;
+  const DEMO = !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY || new URLSearchParams(location.search).has("demo");
 
   const LISTS = {
     barbara: { name: "Bárbara" },
@@ -19,6 +19,17 @@
     1: { label: "Someday", es: "Algún día" },
   };
 
+  const PRICE_TIERS = {
+    1: "Menos de $5,000",
+    2: "De $5,000 a $10,000",
+    3: "De $10,000 a $15,000",
+    4: "Más de $15,000",
+  };
+
+  function tierHtml(tier) {
+    return `<span class="tier" title="${PRICE_TIERS[tier]}">${"$".repeat(tier)}<span class="off">${"$".repeat(4 - tier)}</span></span>`;
+  }
+
   const DEFAULT_ROOMS = ["Cocina", "Sala", "Comedor", "Recámara", "Baño", "General"];
 
   // ---------- Data stores ----------
@@ -28,21 +39,21 @@
     const now = Date.now();
     const day = 86400000;
     const seed = [
-      { list: "barbara", name: "Bolsa de piel café", priority: 4, notes: "Tamaño mediano, que quepa la laptop", link: "https://example.com", updated_at: now - 2 * day },
-      { list: "barbara", name: "Perfume", priority: 3, notes: "El de 100 ml", updated_at: now - 5 * day },
+      { list: "barbara", name: "Bolsa de piel café", price_tier: 1, priority: 4, notes: "Tamaño mediano, que quepa la laptop", link: "https://example.com", updated_at: now - 2 * day },
+      { list: "barbara", name: "Perfume", price_tier: 1, priority: 3, notes: "El de 100 ml", updated_at: now - 5 * day },
       { list: "barbara", name: "Clases de cerámica", priority: 2, updated_at: now - 1 * day },
       { list: "barbara", name: "Libro de recetas", priority: 1, updated_at: now - 9 * day, received: true, received_at: now - day },
-      { list: "carlos", name: "Audífonos inalámbricos", priority: 4, notes: "Con cancelación de ruido", updated_at: now - 3 * day },
-      { list: "carlos", name: "Tenis para correr", priority: 3, size: "27", color: "Blanco", updated_at: now - 6 * day },
+      { list: "carlos", name: "Audífonos inalámbricos", price_tier: 2, priority: 4, notes: "Con cancelación de ruido", updated_at: now - 3 * day },
+      { list: "carlos", name: "Tenis para correr", price_tier: 1, priority: 3, size: "27", color: "Blanco", updated_at: now - 6 * day },
       { list: "carlos", name: "Cafetera de goteo", priority: 2, updated_at: now - 4 * day },
-      { list: "home", name: "Sartén antiadherente", priority: 4, room: "Cocina", updated_at: now - day },
-      { list: "home", name: "Lámpara de pie", priority: 3, room: "Sala", notes: "Luz cálida", updated_at: now - 2 * day },
+      { list: "home", name: "Sartén antiadherente", price: 890, priority: 4, room: "Cocina", updated_at: now - day },
+      { list: "home", name: "Lámpara de pie", price: 1750, priority: 3, room: "Sala", notes: "Luz cálida", updated_at: now - 2 * day },
       { list: "home", name: "Juego de toallas", priority: 3, room: "Baño", updated_at: now - 7 * day },
       { list: "home", name: "Tapete", priority: 2, room: "Recámara", updated_at: now - 8 * day },
       { list: "home", name: "Plantas", priority: 1, room: "General", updated_at: now - 10 * day },
     ].map((it) => ({
       id: crypto.randomUUID(),
-      link: "", photo_url: "", notes: "", room: null, size: "", color: "",
+      link: "", photo_url: "", notes: "", price: null, price_tier: null, room: null, size: "", color: "",
       received: false, received_at: null,
       created_at: new Date(it.updated_at).toISOString(),
       ...it,
@@ -155,6 +166,9 @@
   const dateFmt = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", year: "numeric" });
   const fmtDate = (iso) => (iso ? dateFmt.format(new Date(iso)) : "");
 
+  const priceFmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2, minimumFractionDigits: 0 });
+  const fmtPrice = (n) => priceFmt.format(Number(n));
+
   const hostOf = (u) => {
     try { return new URL(u).hostname.replace(/^www\./, ""); } catch (_) { return "Ver"; }
   };
@@ -247,6 +261,14 @@
       <section class="legend">
         <h3>Prioridad</h3>
         ${legend}
+      </section>
+      <section class="legend">
+        <h3>Precio</h3>
+        ${[1, 2, 3, 4].map((t) => `
+          <div class="legend-row">
+            ${tierHtml(t)}
+            <div><span class="muted">${PRICE_TIERS[t]}</span></div>
+          </div>`).join("")}
       </section>`;
   }
 
@@ -303,6 +325,9 @@
             <button type="button" class="check" data-check="${it.id}" aria-pressed="${!!it.received}"
               title="${it.received ? "Recibido · desmarcar" : "Marcar como recibido"}">✓</button>
           </div>
+          ${it.list === "home"
+            ? (it.price != null && it.price !== "" ? `<p class="price">${fmtPrice(it.price)}</p>` : "")
+            : (it.price_tier ? `<p class="price">${tierHtml(it.price_tier)}</p>` : "")}
           <div class="priority">
             ${starsHtml(it.priority, it.id)}
             <small>${PRIORITIES[it.priority]?.label || ""}</small>
@@ -314,8 +339,8 @@
           ].join("")}</p>` : ""}
           ${it.notes ? `<p class="notes">${esc(it.notes)}</p>` : ""}
           <div class="meta">
-            <span>${it.received ? `Recibido ${fmtDate(it.received_at)}` : `Actualizado ${fmtDate(it.updated_at)}`}</span>
             ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(hostOf(link))} ↗</a>` : ""}
+            <span>${it.received ? `Recibido ${fmtDate(it.received_at)}` : `Actualizado ${fmtDate(it.updated_at)}`}</span>
           </div>
           <button type="button" class="link-btn" data-edit="${it.id}" style="align-self:flex-start">Editar</button>
         </div>
@@ -407,6 +432,23 @@
   let formPriority = 3;
   let pendingBlob = null;
 
+  const formTiers = document.getElementById("form-tiers");
+  let formTier = null;
+
+  function setFormTier(t) {
+    formTier = t;
+    formTiers.querySelectorAll("[data-tier]").forEach((b) =>
+      b.setAttribute("aria-pressed", String(Number(b.dataset.tier) === t)));
+    document.getElementById("form-tier-label").textContent = t ? PRICE_TIERS[t] : "Opcional";
+  }
+
+  formTiers.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tier]");
+    if (!b) return;
+    const t = Number(b.dataset.tier);
+    setFormTier(formTier === t ? null : t);
+  });
+
   function setFormPriority(p) {
     formPriority = p;
     formStars.innerHTML = starsHtml(p).replace(/^<span class="stars"[^>]*>|<\/span>$/g, "");
@@ -427,6 +469,7 @@
     document.getElementById("dialog-title").textContent = item ? "Editar" : `Agregar a ${LISTS[list].name}`;
     form.name.value = item?.name || "";
     form.link.value = item?.link || "";
+    form.price.value = item?.price ?? "";
     form.notes.value = item?.notes || "";
     const photo = item?.photo_url || "";
     form.photo_url.value = photo.startsWith("data:") ? "" : photo;
@@ -435,6 +478,9 @@
     setFormPriority(item?.priority || 3);
 
     const isHome = list === "home";
+    setFormTier(item?.price_tier || null);
+    document.getElementById("price-field").hidden = !isHome;
+    document.getElementById("tier-field").hidden = isHome;
     document.getElementById("room-field").hidden = !isHome;
     document.getElementById("size-color-fields").hidden = isHome;
     form.size.value = item?.size || "";
@@ -514,6 +560,8 @@
       const data = {
         name: form.name.value.trim(),
         link: form.link.value.trim() ? safeUrl(form.link.value) : "",
+        price: list !== "home" || form.price.value.trim() === "" ? null : Number(form.price.value.replace(/[^0-9.]/g, "")),
+        price_tier: list === "home" ? null : formTier,
         notes: form.notes.value.trim(),
         photo_url,
         priority: formPriority,

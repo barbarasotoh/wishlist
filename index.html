@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wish List</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>★</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+  <div id="app"></div>
+
+  <dialog id="item-dialog">
+    <form id="item-form" method="dialog">
+      <h2 id="dialog-title">Agregar</h2>
+
+      <label class="field">
+        <span>Nombre del producto</span>
+        <input name="name" required maxlength="140" autocomplete="off">
+      </label>
+
+      <div class="field">
+        <span>Foto</span>
+        <div class="photo-picker">
+          <div class="photo-preview" id="photo-preview"></div>
+          <div class="photo-actions">
+            <label class="btn btn-ghost">
+              Subir foto
+              <input type="file" name="photo_file" accept="image/*" hidden>
+            </label>
+            <input name="photo_url" type="url" placeholder="o pega el link de una imagen" autocomplete="off">
+            <button type="button" class="link-btn" id="photo-clear">Quitar foto</button>
+          </div>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Link</span>
+        <input name="link" type="text" inputmode="url" placeholder="https://…" autocomplete="off">
+      </label>
+
+      <div class="field">
+        <span>Prioridad</span>
+        <div class="stars stars-lg" id="form-stars"></div>
+        <small id="form-priority-label" class="muted"></small>
+      </div>
+
+      <div class="field-row" id="size-color-fields">
+        <label class="field">
+          <span>Talla</span>
+          <input name="size" maxlength="40" autocomplete="off" placeholder="M, 27, 32x30…">
+        </label>
+        <label class="field">
+          <span>Color</span>
+          <input name="color" maxlength="60" autocomplete="off" placeholder="Negro, beige…">
+        </label>
+      </div>
+
+      <label class="field" id="room-field">
+        <span>Cuarto</span>
+        <input name="room" list="rooms" autocomplete="off" placeholder="Cocina, Sala…">
+        <datalist id="rooms"></datalist>
+      </label>
+
+      <label class="field">
+        <span>Notas</span>
+        <textarea name="notes" rows="3" maxlength="1000" placeholder="Modelo, tienda, detalles…"></textarea>
+      </label>
+
+      <p class="form-error" id="form-error"></p>
+
+      <div class="dialog-actions">
+        <button type="button" class="link-btn danger" id="delete-btn">Borrar</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" id="cancel-btn">Cancelar</button>
+        <button type="submit" class="btn" id="save-btn">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="config.js?v=2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>

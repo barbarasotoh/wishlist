@@ -39,7 +39,7 @@
     const now = Date.now();
     const day = 86400000;
     const seed = [
-      { list: "barbara", name: "Bolsa de piel café", price_tier: 1, priority: 4, notes: "Tamaño mediano, que quepa la laptop", link: "https://example.com", updated_at: now - 2 * day },
+      { list: "barbara", name: "Bolsa de piel café", price_tier: 1, extras: [{ name: "Cartera a juego", detail: "Café", link: "" }, { name: "Llavero de piel", detail: "", link: "" }], priority: 4, notes: "Tamaño mediano, que quepa la laptop", link: "https://example.com", updated_at: now - 2 * day },
       { list: "barbara", name: "Perfume", price_tier: 1, priority: 3, notes: "El de 100 ml", updated_at: now - 5 * day },
       { list: "barbara", name: "Clases de cerámica", priority: 2, updated_at: now - 1 * day },
       { list: "barbara", name: "Libro de recetas", priority: 1, updated_at: now - 9 * day, received: true, received_at: now - day },
@@ -53,7 +53,7 @@
       { list: "home", name: "Plantas", priority: 1, room: "General", updated_at: now - 10 * day },
     ].map((it) => ({
       id: crypto.randomUUID(),
-      link: "", photo_url: "", notes: "", price: null, price_tier: null, room: null, size: "", color: "",
+      link: "", photo_url: "", notes: "", price: null, price_tier: null, extras: [], room: null, size: "", color: "",
       received: false, received_at: null,
       created_at: new Date(it.updated_at).toISOString(),
       ...it,
@@ -141,6 +141,7 @@
     session: null,
     items: [],
     roomFilter: "Todo",
+    openExtras: new Set(),
   };
 
   const app = document.getElementById("app");
@@ -337,7 +338,8 @@
             it.size ? `<span><b>Talla</b> ${esc(it.size)}</span>` : "",
             it.color ? `<span><b>Color</b> ${esc(it.color)}</span>` : "",
           ].join("")}</p>` : ""}
-          ${it.notes ? `<p class="notes">${esc(it.notes)}</p>` : ""}
+          ${extrasHtml(it)}
+          ${it.notes ? `<p class="notes" data-notes title="Toca para ver completo">${esc(it.notes)}</p>` : ""}
           <div class="meta">
             ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(hostOf(link))} ↗</a>` : ""}
             <span>${it.received ? `Recibido ${fmtDate(it.received_at)}` : `Actualizado ${fmtDate(it.updated_at)}`}</span>
@@ -345,6 +347,26 @@
           <button type="button" class="link-btn" data-edit="${it.id}" style="align-self:flex-start">Editar</button>
         </div>
       </article>`;
+  }
+
+  function extrasHtml(it) {
+    const extras = Array.isArray(it.extras) ? it.extras.filter((x) => x && x.name) : [];
+    if (!extras.length) return "";
+    const open = state.openExtras.has(it.id);
+    const items = extras.map((x) => {
+      const url = safeUrl(x.link);
+      const name = url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)} ↗</a>`
+        : `<span>${esc(x.name)}</span>`;
+      return `<li>${name}${x.detail ? `<small> · ${esc(x.detail)}</small>` : ""}</li>`;
+    }).join("");
+    return `
+      <div class="extras">
+        <button type="button" class="extras-toggle" data-extras="${it.id}" aria-expanded="${open}">
+          + ${extras.length} ${extras.length === 1 ? "extra" : "extras"} <span aria-hidden="true">${open ? "▴" : "▾"}</span>
+        </button>
+        ${open ? `<ul>${items}</ul>` : ""}
+      </div>`;
   }
 
   function renderLogin(error = "") {
@@ -408,10 +430,17 @@
   }
 
   app.addEventListener("click", (e) => {
+    const notes = e.target.closest("[data-notes]");
+    if (notes) return notes.classList.toggle("expanded");
     const t = e.target.closest("button");
     if (!t || t.disabled) return;
     if (t.dataset.star && t.dataset.id) return setPriority(t.dataset.id, Number(t.dataset.star));
     if (t.dataset.check) return toggleReceived(t.dataset.check);
+    if (t.dataset.extras) {
+      const id = t.dataset.extras;
+      state.openExtras.has(id) ? state.openExtras.delete(id) : state.openExtras.add(id);
+      return render();
+    }
     if (t.dataset.edit) return openDialog(state.items.find((i) => i.id === t.dataset.edit));
     if (t.dataset.room) { state.roomFilter = t.dataset.room; return render(); }
     if (t.dataset.action === "add") return openDialog(null);
@@ -449,6 +478,25 @@
     setFormTier(formTier === t ? null : t);
   });
 
+  const extrasList = document.getElementById("extras-list");
+
+  function addExtraRow(x = {}) {
+    const row = document.createElement("div");
+    row.className = "extra-row";
+    row.innerHTML = `
+      <input class="x-name" placeholder="Nombre (funda, zapatos…)" maxlength="140" autocomplete="off" value="${esc(x.name || "")}">
+      <button type="button" class="x-remove" aria-label="Quitar extra">×</button>
+      <input class="x-detail" placeholder="Talla, color…" maxlength="120" autocomplete="off" value="${esc(x.detail || "")}">
+      <input class="x-link" placeholder="Link (opcional)" inputmode="url" autocomplete="off" value="${esc(x.link || "")}">`;
+    row.querySelector(".x-remove").addEventListener("click", () => row.remove());
+    extrasList.appendChild(row);
+    return row;
+  }
+
+  document.getElementById("add-extra").addEventListener("click", () => {
+    addExtraRow().querySelector(".x-name").focus();
+  });
+
   function setFormPriority(p) {
     formPriority = p;
     formStars.innerHTML = starsHtml(p).replace(/^<span class="stars"[^>]*>|<\/span>$/g, "");
@@ -471,6 +519,8 @@
     form.link.value = item?.link || "";
     form.price.value = item?.price ?? "";
     form.notes.value = item?.notes || "";
+    extrasList.innerHTML = "";
+    (Array.isArray(item?.extras) ? item.extras : []).forEach(addExtraRow);
     const photo = item?.photo_url || "";
     form.photo_url.value = photo.startsWith("data:") ? "" : photo;
     form.dataset.photo = photo;
@@ -563,6 +613,13 @@
         price: list !== "home" || form.price.value.trim() === "" ? null : Number(form.price.value.replace(/[^0-9.]/g, "")),
         price_tier: list === "home" ? null : formTier,
         notes: form.notes.value.trim(),
+        extras: [...extrasList.querySelectorAll(".extra-row")]
+          .map((r) => ({
+            name: r.querySelector(".x-name").value.trim(),
+            detail: r.querySelector(".x-detail").value.trim(),
+            link: r.querySelector(".x-link").value.trim() ? safeUrl(r.querySelector(".x-link").value) : "",
+          }))
+          .filter((x) => x.name),
         photo_url,
         priority: formPriority,
         room: list === "home" ? (form.room.value.trim() || "General") : null,

@@ -8,6 +8,7 @@ create table if not exists public.items (
   photo_url   text,
   priority    smallint not null default 3 check (priority between 1 and 4),
   notes       text,
+  extras      jsonb not null default '[]'::jsonb,
   room        text,
   size        text,
   color       text,
@@ -40,3 +41,4 @@ create policy "signed in users upload photos" on storage.objects
 -- Cambios posteriores (seguros de correr más de una vez).
 alter table public.items add column if not exists price numeric;
 alter table public.items add column if not exists price_tier smallint check (price_tier between 1 and 4);
+alter table public.items add column if not exists extras jsonb not null default '[]'::jsonb;
